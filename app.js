@@ -28,8 +28,11 @@ let state = load() || {
   projects: [],
   activeProjectId: null,
   theme: "ocean",
+  darkMode: false,
   timerSeconds: 1500,
 };
+
+if (typeof state.darkMode !== "boolean") state.darkMode = state.theme === "midnight";
 
 if (!state.projects) state.projects = [];
 
@@ -49,14 +52,24 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 const activeProject = () => state.projects.find(p => p.id === state.activeProjectId) || null;
 const esc = (s) => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-// --- themes ---
+// --- themes + dark mode ---
 function applyTheme() {
   document.documentElement.setAttribute("data-theme", state.theme);
+  document.documentElement.classList.toggle("dark", !!state.darkMode);
   document.querySelectorAll("[data-set-theme]").forEach(b =>
     b.classList.toggle("active", b.dataset.setTheme === state.theme));
+  const t = $("#darkToggle");
+  if (t) {
+    t.textContent = state.darkMode ? "☀️ Light" : "🌙 Dark";
+    t.setAttribute("aria-pressed", String(!!state.darkMode));
+  }
 }
 document.querySelectorAll("[data-set-theme]").forEach(b =>
   b.addEventListener("click", () => { state.theme = b.dataset.setTheme; save(); applyTheme(); }));
+$("#darkToggle")?.addEventListener("click", () => {
+  state.darkMode = !state.darkMode;
+  save(); applyTheme();
+});
 
 // --- projects ---
 projectForm.addEventListener("submit", (e) => {

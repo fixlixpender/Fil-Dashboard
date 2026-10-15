@@ -43,6 +43,31 @@ html[data-theme="midnight"] {
   --shadow: 0 10px 30px rgba(0,0,0,.45);
 }
 
+/* Dark mode — soft dark gradients per hue, not solid */
+html.dark {
+  --card: rgba(255,255,255,.08);
+  --text: #f4f4f5;
+  --muted: #a1a1b3;
+  --line: rgba(255,255,255,.14);
+  --shadow: 0 10px 30px rgba(0,0,0,.45);
+}
+html[data-theme="ocean"].dark {
+  --bg: linear-gradient(135deg, #070d1a 0%, #10294f 38%, #1e3a6e 72%, #2b4fa0 100%);
+  --accent: #60a5fa;
+}
+html[data-theme="ember"].dark {
+  --bg: linear-gradient(135deg, #1a0e06 0%, #3d2110 38%, #7c2d12 72%, #b45309 100%);
+  --accent: #fb923c;
+}
+html[data-theme="forest"].dark {
+  --bg: linear-gradient(135deg, #06130c 0%, #0e2f1d 38%, #14532d 72%, #1d7a44 100%);
+  --accent: #4ade80;
+}
+html[data-theme="midnight"].dark {
+  --bg: linear-gradient(135deg, #0b0b10 0%, #1a1a24 38%, #2b2b3d 72%, #3f3f56 100%);
+  --accent: #a78bfa;
+}
+
 html, body { height: 100%; }
 body {
   margin: 0;
@@ -77,6 +102,8 @@ body {
 .brand p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
 
 .themes { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.top-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mode-btn { border-radius: 999px; font-size: 13px; padding: 7px 12px; }
 .themes-label { color: var(--muted); font-size: 13px; margin-right: 4px; }
 .theme-btn {
   display: inline-flex; align-items: center; gap: 6px;
@@ -137,7 +164,9 @@ input[type="text"], input[type="number"] {
   color: var(--text); font-size: 14px;
 }
 html[data-theme="midnight"] input[type="text"],
-html[data-theme="midnight"] input[type="number"] {
+html[data-theme="midnight"] input[type="number"],
+html.dark input[type="text"],
+html.dark input[type="number"] {
   background: rgba(0,0,0,.3);
 }
 input:disabled { opacity: .55; }
