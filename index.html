@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en" data-theme="ocean">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fil-Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">◧</div>
+        <div>
+          <h1>Fil-Dashboard</h1>
+          <p>Folders • Todos • Focus timer</p>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <div class="themes" role="group" aria-label="Themes">
+          <span class="themes-label">Theme</span>
+          <button class="theme-btn" data-set-theme="midnight" title="Black">
+            <span class="swatch swatch-black"></span>Black
+          </button>
+          <button class="theme-btn" data-set-theme="ember" title="Orange">
+            <span class="swatch swatch-orange"></span>Orange
+          </button>
+          <button class="theme-btn active" data-set-theme="ocean" title="Blue">
+            <span class="swatch swatch-blue"></span>Blue
+          </button>
+          <button class="theme-btn" data-set-theme="forest" title="Green">
+            <span class="swatch swatch-green"></span>Green
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="board">
+      <!-- Projects column -->
+      <section class="card projects" aria-label="Projects">
+        <div class="card-head">
+          <h2>Projects</h2>
+          <span id="projectCount" class="pill">0</span>
+        </div>
+
+        <form id="projectForm" class="row">
+          <input id="projectInput" type="text" placeholder="New project folder…" maxlength="60" autocomplete="off" />
+          <button type="submit" class="btn primary">Add</button>
+        </form>
+
+        <div id="projectList" class="project-list"></div>
+
+        <p class="hint">Select a project to see its todos. Stored in your browser (localStorage).</p>
+      </section>
+
+      <!-- Todos column -->
+      <section class="card todos" aria-label="Todo list">
+        <div class="card-head">
+          <div>
+            <h2 id="activeProjectName">No project</h2>
+            <p id="todoStats" class="muted">Create a project to get started.</p>
+          </div>
+          <div class="todo-actions">
+            <button id="clearDoneBtn" class="btn ghost" title="Remove completed todos">Clear done</button>
+          </div>
+        </div>
+
+        <div class="progress"><div id="todoProgress" class="progress-fill"></div></div>
+
+        <form id="todoForm" class="row">
+          <input id="todoInput" type="text" placeholder="Add a task…" maxlength="200" autocomplete="off" disabled />
+          <button type="submit" class="btn primary" disabled id="todoAddBtn">Add</button>
+        </form>
+
+        <ul id="todoList" class="todo-list"></ul>
+      </section>
+
+      <!-- Timer column -->
+      <section class="card timer" aria-label="Countdown timer">
+        <div class="card-head">
+          <h2>Countdown</h2>
+          <span id="timerState" class="pill">idle</span>
+        </div>
+
+        <div id="timerDisplay" class="timer-display">25:00</div>
+        <div class="progress"><div id="timerProgress" class="progress-fill"></div></div>
+
+        <div class="timer-inputs">
+          <label>H <input id="inH" type="number" min="0" max="23" value="0" /></label>
+          <label>M <input id="inM" type="number" min="0" max="59" value="25" /></label>
+          <label>S <input id="inS" type="number" min="0" max="59" value="0" /></label>
+        </div>
+
+        <div class="timer-buttons">
+          <button id="setBtn" class="btn">Set</button>
+          <button id="startPauseBtn" class="btn primary">Start</button>
+          <button id="resetBtn" class="btn ghost">Reset</button>
+        </div>
+
+        <div class="presets">
+          <button class="btn chip" data-preset="300">5m</button>
+          <button class="btn chip" data-preset="900">15m</button>
+          <button class="btn chip" data-preset="1500">25m</button>
+          <button class="btn chip" data-preset="3600">1h</button>
+        </div>
+
+        <p class="hint">Set a time, Start / Pause, Reset to restore. Plays a beep when done.</p>
+      </section>
+    </main>
+
+    <footer class="foot muted">Full-width dashboard • auto-saves locally</footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
