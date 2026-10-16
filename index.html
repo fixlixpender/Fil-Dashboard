@@ -39,7 +39,8 @@
     </header>
 
     <main class="board">
-      <!-- Projects column -->
+      <!-- Left column: projects + agenda -->
+      <div class="side-stack">
       <section class="card projects" aria-label="Projects">
         <div class="card-head">
           <h2>Projects</h2>
@@ -55,6 +56,19 @@
 
         <p class="hint">Select a project to see its todos. Stored in your browser (localStorage).</p>
       </section>
+
+      <section class="card agenda" aria-label="Upcoming">
+        <div class="card-head">
+          <h2>Upcoming</h2>
+          <span id="agendaCount" class="pill">0</span>
+        </div>
+        <div class="agenda-top">
+          <button id="agendaScope" class="btn chip" title="Toggle All projects / Active project">All projects</button>
+        </div>
+        <div id="agendaList" class="agenda-list"></div>
+        <p class="hint">Due soon across projects. Click a task to jump to it.</p>
+      </section>
+      </div>
 
       <!-- Todos column -->
       <section class="card todos" aria-label="Todo list">

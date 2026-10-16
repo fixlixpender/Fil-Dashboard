@@ -275,6 +275,110 @@ function render() {
   renderProjects();
   renderTodos();
   if (typeof renderCalendar === "function") renderCalendar();
+  if (typeof renderAgenda === "function") renderAgenda();
+}
+
+// --- upcoming agenda (under projects, opposite calendar) ---
+const agendaList = $("#agendaList");
+const agendaCount = $("#agendaCount");
+const agendaScopeBtn = $("#agendaScope");
+let agendaScope = "all"; // 'all' | 'active'
+
+agendaScopeBtn?.addEventListener("click", () => {
+  agendaScope = agendaScope === "all" ? "active" : "all";
+  renderAgenda();
+});
+
+agendaList?.addEventListener("click", (e) => {
+  const box = e.target.closest('input[type="checkbox"]');
+  if (box) {
+    const item = box.closest("[data-agenda]");
+    if (!item) return;
+    const [pid, tid] = item.dataset.agenda.split("::");
+    const proj = state.projects.find(p => p.id === pid);
+    const t = proj?.todos.find(t => t.id === tid);
+    if (t) { t.done = box.checked; save(); render(); }
+    return;
+  }
+  const item = e.target.closest("[data-agenda]");
+  if (!item) return;
+  const [pid, tid] = item.dataset.agenda.split("::");
+  const proj = state.projects.find(p => p.id === pid);
+  if (!proj) return;
+  const t = proj.todos.find(t => t.id === tid);
+  state.activeProjectId = pid;
+  if (t?.due) {
+    filterDateISO = t.due;
+    const d = isoToDate(t.due);
+    selectedDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    viewY = selectedDate.getFullYear(); viewM = selectedDate.getMonth();
+    if (todoDueInput) todoDueInput.value = t.due;
+  } else {
+    filterDateISO = null;
+  }
+  save(); render();
+  document.querySelector(".todos")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+});
+
+function renderAgenda() {
+  if (!agendaList) return;
+  if (agendaScopeBtn) agendaScopeBtn.textContent = agendaScope === "all" ? "All projects" : "Active project";
+
+  const todayISO = toISODate(new Date());
+  const tomorrowD = new Date(); tomorrowD.setDate(tomorrowD.getDate() + 1);
+  const tomorrowISO = toISODate(tomorrowD);
+
+  let pool = [];
+  const inScope = agendaScope === "active"
+    ? state.projects.filter(p => p.id === state.activeProjectId)
+    : state.projects;
+  for (const p of inScope) {
+    for (const t of (p.todos || [])) {
+      if (t.done) continue;
+      pool.push({ p, t });
+    }
+  }
+  if (agendaCount) agendaCount.textContent = String(pool.length);
+
+  if (!pool.length) {
+    agendaList.innerHTML = `<div class="empty">All clear — no open tasks${agendaScope === "active" ? " in this project" : ""}.</div>`;
+    return;
+  }
+
+  pool.sort((a, b) => {
+    const da = a.t.due || "9999-12-31", db = b.t.due || "9999-12-31";
+    if (da !== db) return da < db ? -1 : 1;
+    return (a.t.createdAt || 0) - (b.t.createdAt || 0);
+  });
+  const shown = pool.slice(0, 30);
+
+  let html = "";
+  let lastGroup = "";
+  for (const { p, t } of shown) {
+    let group, cls = "";
+    if (!t.due) group = "No date";
+    else if (t.due < todayISO) { group = "Overdue"; cls = "overdue-h"; }
+    else if (t.due === todayISO) group = `Today • ${fmtShort(t.due)}`;
+    else if (t.due === tomorrowISO) group = `Tomorrow • ${fmtShort(t.due)}`;
+    else group = fmtLong(isoToDate(t.due));
+    if (group !== lastGroup) {
+      html += `<div class="agenda-group${cls ? " " + cls : ""}">${esc(group)}</div>`;
+      lastGroup = group;
+    }
+    const overdue = t.due && t.due < todayISO;
+    const isToday = t.due === todayISO;
+    html += `
+      <button class="agenda-item${overdue ? " is-overdue" : ""}${isToday ? " is-today" : ""}" data-agenda="${p.id}::${t.id}" title="Open ${esc(p.name)} • ${t.due || "no date"}">
+        <input type="checkbox" aria-label="mark done" />
+        <span class="label">${esc(t.text)}</span>
+        <span class="proj">${esc(p.name)}</span>
+        <span class="due${t.due ? " has-date" : ""}${overdue ? " overdue" : ""}">${t.due ? "📅 " + esc(fmtShort(t.due)) : "No date"}</span>
+      </button>`;
+  }
+  if (pool.length > shown.length) {
+    html += `<p class="hint">+ ${pool.length - shown.length} more open tasks.</p>`;
+  }
+  agendaList.innerHTML = html;
 }
 
 // --- timer ---

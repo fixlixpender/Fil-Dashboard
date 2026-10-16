@@ -290,4 +290,31 @@ html.dark .todo-list .due.overdue { color: #fca5a5; border-color: rgba(252,165,1
 }
 html.dark .due-edit { color-scheme: dark; }
 
+/* Upcoming agenda (left, opposite calendar) */
+.agenda-top { display: flex; gap: 8px; margin-bottom: 6px; }
+.agenda-list { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; max-height: 42vh; overflow: auto; }
+.agenda-group {
+  font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--muted); margin: 8px 0 2px;
+}
+.agenda-group.overdue-h { color: #b91c1c; }
+html.dark .agenda-group.overdue-h { color: #fca5a5; }
+.agenda-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px;
+  cursor: pointer; background: transparent; width: 100%; text-align: left; color: var(--text);
+  font-size: 13.5px;
+}
+.agenda-item:hover { border-color: var(--accent); }
+.agenda-item input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); flex-shrink: 0; }
+.agenda-item .label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.agenda-item .proj {
+  font-size: 11px; padding: 2px 8px; border-radius: 999px; flex-shrink: 0;
+  border: 1px solid var(--line); color: var(--muted); max-width: 110px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.agenda-item .due { flex-shrink: 0; }
+.agenda-item.is-overdue { border-color: rgba(185,28,28,.45); }
+.agenda-item.is-today { border-color: var(--accent); }
+
 .foot { text-align: center; margin-top: 18px; font-size: 12.5px; }
