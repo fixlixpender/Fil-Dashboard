@@ -12,9 +12,13 @@ const todoStats = $("#todoStats");
 const todoProgress = $("#todoProgress");
 const todoForm = $("#todoForm");
 const todoInput = $("#todoInput");
+const todoDueInput = $("#todoDueInput");
 const todoAddBtn = $("#todoAddBtn");
 const todoList = $("#todoList");
 const clearDoneBtn = $("#clearDoneBtn");
+const dateFilterBar = $("#dateFilterBar");
+const dateFilterLabel = $("#dateFilterLabel");
+const clearDateFilter = $("#clearDateFilter");
 
 const timerDisplay = $("#timerDisplay");
 const timerProgress = $("#timerProgress");
@@ -51,6 +55,29 @@ function save() {
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const activeProject = () => state.projects.find(p => p.id === state.activeProjectId) || null;
 const esc = (s) => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+// date helpers (local, YYYY-MM-DD)
+const pad2 = (n) => String(n).padStart(2, "0");
+const toISODate = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const isoToDate = (iso) => {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d);
+};
+const fmtShort = (iso) => {
+  if (!iso) return "";
+  try {
+    return isoToDate(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  } catch { return iso; }
+};
+function normalizeTodos() {
+  for (const p of state.projects) {
+    if (!Array.isArray(p.todos)) p.todos = [];
+    for (const t of p.todos) {
+      if (typeof t.due !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(t.due)) t.due = null;
+    }
+  }
+}
+normalizeTodos();
 
 // --- themes + dark mode ---
 function applyTheme() {
@@ -119,15 +146,20 @@ projectList.addEventListener("click", (e) => {
   }
 });
 
-// --- todos ---
+// --- todos + date filter ---
+let filterDateISO = null; // YYYY-MM-DD or null = show all
+
 todoForm.addEventListener("submit", (e) => {
   e.preventDefault();
   const p = activeProject();
   if (!p) return;
   const text = todoInput.value.trim();
   if (!text) return;
-  p.todos.unshift({ id: uid(), text, done: false, createdAt: Date.now() });
+  const due = (todoDueInput?.value || "").trim() || filterDateISO || null;
+  p.todos.unshift({ id: uid(), text, done: false, createdAt: Date.now(), due });
   todoInput.value = "";
+  // keep due input in sync with active filter for fast entry
+  if (todoDueInput) todoDueInput.value = filterDateISO || todoDueInput.value;
   save(); render();
 });
 
@@ -147,6 +179,25 @@ todoList.addEventListener("click", (e) => {
   }
 });
 
+todoList.addEventListener("change", (e) => {
+  const p = activeProject();
+  if (!p) return;
+  const inp = e.target.closest("[data-due-edit]");
+  if (!inp) return;
+  const li = inp.closest("li[data-tid]");
+  const t = p.todos.find(t => t.id === li?.dataset.tid);
+  if (!t) return;
+  t.due = inp.value || null;
+  save(); render();
+});
+
+clearDateFilter?.addEventListener("click", () => {
+  filterDateISO = null;
+  if (todoDueInput) todoDueInput.value = "";
+  renderTodos();
+  renderCalendar();
+});
+
 clearDoneBtn.addEventListener("click", () => {
   const p = activeProject();
   if (!p) return;
@@ -159,36 +210,71 @@ function renderTodos() {
   const hasProject = !!p;
   todoInput.disabled = !hasProject;
   todoAddBtn.disabled = !hasProject;
+  if (todoDueInput) todoDueInput.disabled = !hasProject;
 
   if (!p) {
     activeProjectName.textContent = "No project";
     todoStats.textContent = "Create a project to get started.";
     todoProgress.style.width = "0%";
     todoList.innerHTML = `<div class="empty">Your tasks will appear here.</div>`;
+    dateFilterBar?.classList.add("hidden");
     return;
   }
   activeProjectName.textContent = "📁 " + p.name;
   const total = p.todos.length;
   const done = p.todos.filter(t => t.done).length;
   const pct = total ? Math.round((done / total) * 100) : 0;
-  todoStats.textContent = total ? `${total - done} open • ${done} done • ${pct}% complete` : "No tasks yet — add one above.";
   todoProgress.style.width = pct + "%";
 
+  const todayISO = toISODate(new Date());
+  const list = filterDateISO ? p.todos.filter(t => t.due === filterDateISO) : p.todos;
+
+  if (dateFilterBar) {
+    const show = !!filterDateISO;
+    dateFilterBar.classList.toggle("hidden", !show);
+    if (show) {
+      const n = list.length;
+      const open = list.filter(t => !t.done).length;
+      dateFilterLabel.textContent = `${fmtShort(filterDateISO)} • ${open} open / ${n} total`;
+    }
+  }
+
   if (!total) {
+    todoStats.textContent = "No tasks yet — add one above.";
     todoList.innerHTML = `<div class="empty">No tasks yet.</div>`;
     return;
   }
-  todoList.innerHTML = p.todos.map(t => `
+  if (filterDateISO) {
+    const open = list.filter(t => !t.done).length;
+    todoStats.textContent = `${open} open • ${list.length - open} done for ${fmtShort(filterDateISO)} • ${pct}% total complete`;
+  } else {
+    todoStats.textContent = `${total - done} open • ${done} done • ${pct}% complete`;
+  }
+
+  if (!list.length) {
+    todoList.innerHTML = `<div class="empty">No tasks due ${esc(fmtShort(filterDateISO))}.<br/>Add one above — it will default to this date.</div>`;
+    return;
+  }
+  todoList.innerHTML = list.map(t => {
+    const overdue = t.due && !t.done && t.due < todayISO;
+    const dueChip = t.due
+      ? `<span class="due has-date${overdue ? " overdue" : ""}" title="Due ${t.due}">📅 ${esc(fmtShort(t.due))}</span>`
+      : `<span class="due" title="No due date">No date</span>`;
+    return `
     <li data-tid="${t.id}" class="${t.done ? "done" : ""}">
       <input type="checkbox" ${t.done ? "checked" : ""} aria-label="done" />
       <span class="label">${esc(t.text)}</span>
+      ${dueChip}
+      <input type="date" class="due-edit" data-due-edit value="${t.due || ""}" title="Set due date" />
       <button class="icon-btn" data-tdel title="Delete">✕</button>
-    </li>`).join("");
+    </li>`;
+  }).join("");
 }
 
 function render() {
   renderProjects();
   renderTodos();
+  if (typeof renderCalendar === "function") renderCalendar();
 }
 
 // --- timer ---
@@ -265,12 +351,125 @@ document.querySelectorAll("[data-preset]").forEach(b =>
     setFromInputs();
   }));
 
+// --- calendar ---
+const calGrid = $("#calGrid");
+const calLabel = $("#calLabel");
+const calSelected = $("#calSelected");
+const calPrev = $("#calPrev");
+const calNext = $("#calNext");
+const calTodayBtn = $("#calTodayBtn");
+
+const today = new Date();
+let viewY = today.getFullYear();
+let viewM = today.getMonth(); // 0-11
+let selectedDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+function sameDay(a, b) {
+  return a && b && a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+function fmtLong(d) {
+  return d.toLocaleDateString(undefined, { weekday: "short", year: "numeric", month: "short", day: "numeric" });
+}
+function renderCalendar() {
+  if (!calGrid) return;
+  const monthName = new Date(viewY, viewM, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  calLabel.textContent = monthName;
+
+  // due counts for active project: iso -> { total, open }
+  const dueMap = new Map();
+  const p = typeof activeProject === "function" ? activeProject() : null;
+  if (p) {
+    for (const t of p.todos) {
+      if (!t.due) continue;
+      const e = dueMap.get(t.due) || { total: 0, open: 0 };
+      e.total += 1;
+      if (!t.done) e.open += 1;
+      dueMap.set(t.due, e);
+    }
+  }
+
+  // Monday-first offset: JS getDay() 0=Sun..6=Sat -> Mo=0..Su=6
+  const first = new Date(viewY, viewM, 1);
+  const offset = (first.getDay() + 6) % 7;
+  const daysInMonth = new Date(viewY, viewM + 1, 0).getDate();
+  const daysInPrev = new Date(viewY, viewM, 0).getDate();
+
+  const cells = [];
+  for (let i = offset - 1; i >= 0; i--) {
+    cells.push({ d: daysInPrev - i, other: true, date: new Date(viewY, viewM - 1, daysInPrev - i) });
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push({ d, other: false, date: new Date(viewY, viewM, d) });
+  }
+  while (cells.length % 7 !== 0) {
+    const n = cells.length - (offset + daysInMonth) + 1;
+    cells.push({ d: n, other: true, date: new Date(viewY, viewM + 1, n) });
+  }
+
+  calGrid.innerHTML = cells.map(c => {
+    const isToday = sameDay(c.date, today);
+    const isSel = sameDay(c.date, selectedDate);
+    const iso = toISODate(c.date);
+    const info = dueMap.get(iso);
+    return `<button class="cal-day${c.other ? " other" : ""}${isToday ? " today" : ""}${isSel ? " selected" : ""}${info && info.open > 0 ? " has-open" : ""}" data-cal="${c.date.getFullYear()}-${c.date.getMonth()}-${c.date.getDate()}" aria-label="${fmtLong(c.date)}${info ? `, ${info.open} open` : ""}">${c.d}${info ? `<span class="dot"></span>` : ""}</button>`;
+  }).join("");
+
+  if (selectedDate) {
+    const iso = toISODate(selectedDate);
+    const info = dueMap.get(iso);
+    const parts = [`Selected: ${fmtLong(selectedDate)}`];
+    if (info) parts.push(`${info.open} open / ${info.total} due`);
+    if (typeof filterDateISO !== "undefined" && filterDateISO) parts.push(`• filtering`);
+    else parts.push(`• click a day to filter`);
+    calSelected.textContent = parts.join(" ");
+  } else {
+    calSelected.textContent = "Click a day to filter todos. Click again to show all.";
+  }
+}
+
+calGrid?.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-cal]");
+  if (!btn) return;
+  const [y, m, d] = btn.dataset.cal.split("-").map(Number);
+  selectedDate = new Date(y, m, d);
+  viewY = y; viewM = m;
+  const iso = toISODate(selectedDate);
+  // toggle filter: click same date again -> show all
+  filterDateISO = (filterDateISO === iso) ? null : iso;
+  if (todoDueInput) todoDueInput.value = filterDateISO || iso;
+  save();
+  renderTodos();
+  renderCalendar();
+});
+calPrev?.addEventListener("click", () => {
+  viewM -= 1;
+  if (viewM < 0) { viewM = 11; viewY -= 1; }
+  renderCalendar();
+});
+calNext?.addEventListener("click", () => {
+  viewM += 1;
+  if (viewM > 11) { viewM = 0; viewY += 1; }
+  renderCalendar();
+});
+calTodayBtn?.addEventListener("click", () => {
+  viewY = today.getFullYear(); viewM = today.getMonth();
+  selectedDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  filterDateISO = toISODate(selectedDate);
+  if (todoDueInput) todoDueInput.value = filterDateISO;
+  renderTodos();
+  renderCalendar();
+});
 // seed demo if empty (first run only)
 if (!localStorage.getItem(LS_KEY)) {
+  const t = new Date();
+  const isoToday = toISODate(t);
+  const tomorrow = new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1);
+  const isoTomorrow = toISODate(tomorrow);
   const demo = { id: uid(), name: "Website Redesign", createdAt: Date.now(), todos: [
-    { id: uid(), text: "Draft homepage layout", done: true, createdAt: Date.now() },
-    { id: uid(), text: "Pick colour palette", done: false, createdAt: Date.now() },
-    { id: uid(), text: "Set up countdown for launch", done: false, createdAt: Date.now() },
+    { id: uid(), text: "Draft homepage layout", done: true, createdAt: Date.now(), due: isoToday },
+    { id: uid(), text: "Pick colour palette", done: false, createdAt: Date.now(), due: isoToday },
+    { id: uid(), text: "Set up countdown for launch", done: false, createdAt: Date.now(), due: isoTomorrow },
   ]};
   state.projects = [demo];
   state.activeProjectId = demo.id;

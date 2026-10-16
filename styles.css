@@ -127,6 +127,7 @@ body {
   margin-top: 18px;
   align-items: start;
 }
+.side-stack { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 @media (max-width: 1100px) {
   .board { grid-template-columns: 1fr 1fr; }
   .board .todos { grid-column: span 2; order: -1; }
@@ -221,5 +222,72 @@ input:disabled { opacity: .55; }
 .timer-buttons { display: flex; gap: 8px; }
 .timer-buttons .btn { flex: 1; }
 .presets { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+/* Calendar */
+.cal-nav { display: flex; gap: 8px; margin-bottom: 10px; }
+.cal-nav .btn { flex: 1; padding: 7px 10px; font-size: 14px; }
+.cal-nav #calTodayBtn { flex: 2; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-weekdays { margin-bottom: 4px; }
+.cal-weekdays span {
+  text-align: center; font-size: 11px; font-weight: 700;
+  color: var(--muted); text-transform: uppercase; padding: 4px 0;
+}
+.cal-day {
+  aspect-ratio: 1;
+  display: grid; place-items: center; position: relative;
+  border-radius: 10px; border: 1px solid transparent;
+  background: transparent; color: var(--text);
+  font-size: 13.5px; cursor: pointer; padding: 0;
+  min-width: 0;
+}
+.cal-day:hover:not(:disabled) { border-color: var(--line); filter: brightness(1.05); }
+.cal-day.other { opacity: .35; }
+.cal-day.today {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  font-weight: 700;
+}
+.cal-day.selected {
+  background: var(--accent); color: var(--accent-ink);
+  font-weight: 700; border-color: transparent;
+}
+.cal-day.selected.today { outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 1px; }
+.cal-day .dot {
+  position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%);
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--accent);
+}
+.cal-day.selected .dot { background: var(--accent-ink); }
+.cal-day.has-open { font-weight: 700; }
+
+/* Todos <-> dates */
+.todo-form input[type="date"] {
+  max-width: 135px;
+  padding: 10px 8px; border-radius: 10px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, #fff 70%, transparent);
+  color: var(--text); font-size: 13px;
+}
+html.dark .todo-form input[type="date"] { background: rgba(0,0,0,.3); color-scheme: dark; }
+.date-filter {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 10px;
+}
+.date-filter.hidden { display: none; }
+.todo-list li { flex-wrap: wrap; }
+.todo-list .due {
+  font-size: 12px; padding: 3px 8px; border-radius: 999px;
+  border: 1px solid var(--line); color: var(--muted); white-space: nowrap;
+}
+.todo-list .due.has-date { color: var(--text); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.todo-list .due.overdue { color: #b91c1c; border-color: rgba(185,28,28,.4); background: rgba(185,28,28,.08); font-weight: 700; }
+html.dark .todo-list .due.overdue { color: #fca5a5; border-color: rgba(252,165,165,.4); background: rgba(252,165,165,.1); }
+.due-edit {
+  font-size: 12px; padding: 4px 6px; border-radius: 8px;
+  border: 1px solid var(--line); background: transparent; color: var(--muted);
+  max-width: 130px;
+}
+html.dark .due-edit { color-scheme: dark; }
 
 .foot { text-align: center; margin-top: 18px; font-size: 12.5px; }

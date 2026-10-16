@@ -70,14 +70,22 @@
 
         <div class="progress"><div id="todoProgress" class="progress-fill"></div></div>
 
-        <form id="todoForm" class="row">
+        <form id="todoForm" class="row todo-form">
           <input id="todoInput" type="text" placeholder="Add a task…" maxlength="200" autocomplete="off" disabled />
+          <input id="todoDueInput" type="date" title="Due date (optional)" disabled />
           <button type="submit" class="btn primary" disabled id="todoAddBtn">Add</button>
         </form>
+
+        <div id="dateFilterBar" class="date-filter hidden">
+          <span id="dateFilterLabel" class="pill"></span>
+          <button id="clearDateFilter" class="btn chip" title="Show all todos">Show all ✕</button>
+        </div>
 
         <ul id="todoList" class="todo-list"></ul>
       </section>
 
+      <!-- Right column: timer + calendar -->
+      <div class="side-stack">
       <!-- Timer column -->
       <section class="card timer" aria-label="Countdown timer">
         <div class="card-head">
@@ -109,6 +117,28 @@
 
         <p class="hint">Set a time, Start / Pause, Reset to restore. Plays a beep when done.</p>
       </section>
+
+      <!-- Calendar under countdown -->
+      <section class="card calendar" aria-label="Calendar">
+        <div class="card-head">
+          <h2>Calendar</h2>
+          <span id="calLabel" class="pill">…</span>
+        </div>
+
+        <div class="cal-nav">
+          <button id="calPrev" class="btn" title="Previous month" aria-label="Previous month">‹</button>
+          <button id="calTodayBtn" class="btn ghost" title="Go to today">Today</button>
+          <button id="calNext" class="btn" title="Next month" aria-label="Next month">›</button>
+        </div>
+
+        <div class="cal-grid cal-weekdays" aria-hidden="true">
+          <span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span>
+        </div>
+        <div id="calGrid" class="cal-grid"></div>
+
+        <p id="calSelected" class="hint"></p>
+      </section>
+      </div>
     </main>
 
     <footer class="foot muted">Full-width dashboard • auto-saves locally</footer>
